@@ -1,7 +1,10 @@
 {
   "canisters": {
     "backpass": {
-
+      "type": "motoko",
+      "main": "src/back.mo"
+    },
+    "airdrop": {
       "type": "motoko",
       "main": "src/main.mo"
     }

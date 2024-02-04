@@ -9,9 +9,9 @@ import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 
 actor class() = this {
-
+    let v = 1;
     //--- Test only
-    let test_owner = Principal.fromText("vwng4-j5dgs-e5kv2-ofyq2-hc4be-7u2fn-mmncn-u7dhj-nzkyq-vktfa-xqe");
+    let test_owner = Principal.fromText("6zw76-piaaa-aaaal-qdfoq-cai"); // will pass back our NTN 
     private func test_subaccount(n:Nat64) : ?Blob {
         ?Blob.fromArray(Iter.toArray(I.pad<Nat8>( Iter.fromArray(ENat64(n)), 32, 0 : Nat8)));
     };

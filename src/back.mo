@@ -10,6 +10,7 @@ import Nat64 "mo:base/Nat64";
 
 actor class() = this {
 
+    let v = 1;
     //--- Test only
     let test_owner = Principal.fromText("z45mi-3hwqo-bsda6-saeqm-fambt-gp7rn-aynd3-v4oga-dfe24-voedf-mae");
    
