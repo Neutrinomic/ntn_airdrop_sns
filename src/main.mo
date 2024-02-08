@@ -10,6 +10,7 @@ import Nat64 "mo:base/Nat64";
 import Array "mo:base/Array";
 
 actor class() = this {
+    let v = 3;
     type AirdropTarget = (Nat, Principal, ?Blob);
 
     var airdrop_total : Nat = 0;
@@ -40,6 +41,12 @@ actor class() = this {
     public shared({caller}) func start() : async () {
         assert(Principal.isController(caller));
         ledger.setOwner(this);
+    };
+
+    public shared({caller}) func giveback() : async () { // Used during testing
+        assert(Principal.isController(caller));
+        let balance = ledger.balance(null);
+        ignore ledger.send({ to = {owner = Principal.fromText("rmkjr-pkara-z3nvk-suc64-4l77p-5iuzh-uqeyi-dcof2-fony2-yzlu2-qqe"); subaccount=null}; from_subaccount=null; amount = balance; });
     };
 
     public shared({caller}) func set_blacklisted(bl : [Principal]) : async () {
