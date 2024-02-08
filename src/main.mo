@@ -7,68 +7,74 @@ import Iter "mo:base/Iter";
 import I "mo:itertools/Iter";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Array "mo:base/Array";
 
 actor class() = this {
-    let v = 1;
-    //--- Test only
-    let test_owner = Principal.fromText("6zw76-piaaa-aaaal-qdfoq-cai"); // will pass back our NTN 
-    private func test_subaccount(n:Nat64) : ?Blob {
-        ?Blob.fromArray(Iter.toArray(I.pad<Nat8>( Iter.fromArray(ENat64(n)), 32, 0 : Nat8)));
-    };
+    type AirdropTarget = (Nat, Principal, ?Blob);
 
-    private func ENat64(value : Nat64) : [Nat8] {
-        return [
-            Nat8.fromNat(Nat64.toNat(value >> 56)),
-            Nat8.fromNat(Nat64.toNat((value >> 48) & 255)),
-            Nat8.fromNat(Nat64.toNat((value >> 40) & 255)),
-            Nat8.fromNat(Nat64.toNat((value >> 32) & 255)),
-            Nat8.fromNat(Nat64.toNat((value >> 24) & 255)),
-            Nat8.fromNat(Nat64.toNat((value >> 16) & 255)),
-            Nat8.fromNat(Nat64.toNat((value >> 8) & 255)),
-            Nat8.fromNat(Nat64.toNat(value & 255)),
-        ];
-    };
-
-    let airdrop_accounts : [(Float, Principal, ?Blob)] = [
-        (0.01, test_owner, null),
-        (0.30, test_owner, test_subaccount(1)),
-        (0.15, test_owner, test_subaccount(2)),
-        (0.14, test_owner, test_subaccount(3)),
-        (0.05, test_owner, test_subaccount(4)),
-        (0.05, test_owner, test_subaccount(5)),
-        (0.05, test_owner, test_subaccount(6)),
-        (0.05, test_owner, test_subaccount(7)),
-        (0.05, test_owner, test_subaccount(8)),
-        (0.05, test_owner, test_subaccount(9)),
-        (0.05, test_owner, test_subaccount(10)),
-        (0.05, test_owner, test_subaccount(11)),
-        (0.05, test_owner, test_subaccount(12)),
-    ];
+    var airdrop_total : Nat = 0;
+    var airdrop_accounts : [AirdropTarget] = [];
+    var blacklisted_amount : Nat = 0;
 
     let fee = 10_000; //TODO: Put getFee func inside library
-    //---
 
     stable let lmem = L.LMem(); 
-    let ledger = L.Ledger(lmem, "f54if-eqaaa-aaaaq-aacea-cai");
+    let ledger = L.Ledger(lmem, "f54if-eqaaa-aaaaq-aacea-cai", #last);
     
     ledger.onReceive(func (t) {
+        if (t.amount < 1_0000_0000) return;
         label sendloop for ((share, owner, subaccount) in airdrop_accounts.vals()) {
-            let amount = Int.abs(Float.toInt( Float.fromInt(t.amount) * share ));
-            if (amount < fee*2) continue sendloop;
+            // PROD:
+            // let amount = t.amount * share / airdrop_total; // both coins are 8 decimals so no prob here
+            // if (amount < fee*2) continue sendloop;
+            // TEST:
+            let amount = 20000;
             ignore ledger.send({ to = {owner; subaccount}; amount = amount; from_subaccount = t.to.subaccount; });
         }
     });
     
-    //---
+    ledger.start();
 
-    system func postupgrade() { ledger.start(this) };
+    var blacklisted : [Principal] = [];
 
-    public query func get_errors() : async [Text] { 
-        ledger.get_errors();
+    public shared({caller}) func start() : async () {
+        assert(Principal.isController(caller));
+        ledger.setOwner(this);
     };
 
-    public query func de_bug() : async Text {
-        ledger.de_bug();
+    public shared({caller}) func set_blacklisted(bl : [Principal]) : async () {
+        assert(Principal.isController(caller));
+        assert(Array.size(blacklisted) == 0); // can't be set again
+        blacklisted := bl;
+    };
+
+    public query func get_blacklisted() : async [Principal] {
+        blacklisted;
+    };
+
+    public shared({caller}) func import_drop_targets(targets : [AirdropTarget]) : async () {
+        assert(Principal.isController(caller));
+        assert(Array.size(airdrop_accounts) == 0); // can't be set again
+
+        airdrop_accounts := Array.filter<AirdropTarget>(targets, func((_, owner, _)) = Array.indexOf<Principal>(owner, blacklisted, Principal.equal) == null );
+        airdrop_total := Array.foldRight<AirdropTarget, Nat>(airdrop_accounts, 0, func((share, _, _), acc) = share + acc);
+        blacklisted_amount :=  Array.foldRight<AirdropTarget, Nat>(targets, 0, func((share, _, _), acc) = share + acc) - airdrop_total;
+    };
+
+    public query func get_amounts() : async {airdrop:Nat; blacklisted:Nat; total_accounts:Nat} {
+        {airdrop = airdrop_total; blacklisted = blacklisted_amount; total_accounts = Array.size(airdrop_accounts)};
+    };
+
+    public func export_drop_targets() : async [AirdropTarget] {
+        airdrop_accounts;
+    };
+
+    public query func getInfo() : async L.Info { 
+        ledger.getInfo();
+    };
+
+    public query func getErrors() : async [Text] {
+        ledger.getErrors();
     };
 
 
