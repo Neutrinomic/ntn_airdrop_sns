@@ -1,0 +1,15 @@
+{
+
+  "license": "MIT",
+  "type":"module",
+  "dependencies": {
+    "@dfinity/agent": "^1.0.0",
+    "@dfinity/candid": "^1.0.0",
+    "@dfinity/identity": "^1.0.0",
+    "@dfinity/principal": "^1.0.0",
+    "@infu/icblast": "^2.0.46",
+    "get-random-values": "^3.0.0",
+    "isomorphic-fetch": "^3.0.0",
+    "js-sha256": "^0.11.0"
+  }
+}

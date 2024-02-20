@@ -20,16 +20,15 @@ actor class() = this {
     let fee = 10_000; //TODO: Put getFee func inside library
 
     stable let lmem = L.LMem(); 
-    let ledger = L.Ledger(lmem, "f54if-eqaaa-aaaaq-aacea-cai", #last);
+    let ledger = L.Ledger(lmem, "f54if-eqaaa-aaaaq-aacea-cai", #last); 
     
     ledger.onReceive(func (t) {
         if (t.amount < 1_0000_0000) return;
         label sendloop for ((share, owner, subaccount) in airdrop_accounts.vals()) {
-            // PROD:
-            // let amount = t.amount * share / airdrop_total; // both coins are 8 decimals so no prob here
-            // if (amount < fee*2) continue sendloop;
-            // TEST:
-            let amount = 20000;
+
+            let amount = t.amount * share / airdrop_total; // both coins are 8 decimals so no prob here
+            if (amount < fee*2) continue sendloop;
+      
             ignore ledger.send({ to = {owner; subaccount}; amount = amount; from_subaccount = t.to.subaccount; });
         }
     });
@@ -63,7 +62,7 @@ actor class() = this {
         assert(Principal.isController(caller));
         assert(Array.size(airdrop_accounts) == 0); // can't be set again
 
-        airdrop_accounts := Array.filter<AirdropTarget>(targets, func((_, owner, _)) = Array.indexOf<Principal>(owner, blacklisted, Principal.equal) == null );
+        airdrop_accounts := Array.filter<AirdropTarget>(targets, func((_, owner, _)) = (Array.indexOf<Principal>(owner, blacklisted, Principal.equal) == null) );
         airdrop_total := Array.foldRight<AirdropTarget, Nat>(airdrop_accounts, 0, func((share, _, _), acc) = share + acc);
         blacklisted_amount :=  Array.foldRight<AirdropTarget, Nat>(targets, 0, func((share, _, _), acc) = share + acc) - airdrop_total;
     };

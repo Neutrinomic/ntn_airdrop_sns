@@ -1,0 +1,35 @@
+type anon_class_12_1 = 
+ service {
+   export_drop_targets: () -> (vec AirdropTarget);
+   getErrors: () -> (vec text) query;
+   getInfo: () -> (Info) query;
+   get_amounts: () ->
+    (record {
+       airdrop: nat;
+       blacklisted: nat;
+       total_accounts: nat;
+     }) query;
+   get_blacklisted: () -> (vec principal) query;
+   giveback: () -> ();
+   import_drop_targets: (vec AirdropTarget) -> ();
+   set_blacklisted: (vec principal) -> ();
+   start: () -> ();
+ };
+type Info = 
+ record {
+   accounts: nat;
+   actor_principal: opt principal;
+   errors: nat;
+   lastTxTime: nat64;
+   last_indexed_tx: nat;
+   pending: nat;
+   reader_instructions_cost: nat64;
+   sender_instructions_cost: nat64;
+ };
+type AirdropTarget = 
+ record {
+   nat;
+   principal;
+   opt blob;
+ };
+service : (record {ledgerId: principal;}) -> anon_class_12_1

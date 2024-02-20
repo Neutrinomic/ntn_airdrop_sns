@@ -1,4 +1,4 @@
 [dependencies]
 base = "0.10.2"
-devefi-icrc-ledger = "1.1.2"
+devefi-icrc-ledger = "1.1.9"
 itertools = "0.2.1"
